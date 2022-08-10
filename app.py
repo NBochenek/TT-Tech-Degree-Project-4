@@ -43,6 +43,18 @@ def clean_price(price_string):
         return
   # How could I code this as to not require a $?
 
+def clean_id(id_string, id_options):
+  try:
+      product_id = int(id_string)
+      if product_id not in id_options:
+          raise ValueError
+          return
+  except ValueError:
+      print("Invalid entry. Please enter an integer within the option range.")
+      return
+  else:
+      return product_id
+
 def menu():
     while True:
         print("Please select from the following options:\n\n"
@@ -63,7 +75,32 @@ def app():
     while app_running:
         choice = menu()
         if choice == "v":  # Select product
-            pass
+            choice_submenu = True  # Creates a loop for search submenu.
+            while choice_submenu:
+                choice = input("\nPress l to list all products in the inventory\n"
+                               "Press v to select a specific product in the inventory.\n"
+                               "Press x to return to main menu.\n").lower()
+                if choice == "l":
+                    print("Here all the products in the Inventory:\n")
+                    for products in session.query(Product):
+                        print(products)
+                elif choice == "v":
+                    id_options = []
+                    for products in session.query(Product):
+                        id_options.append(products.product_id)
+                    id_error = True
+                    while id_error:  # Loop to ensure id input is valid.
+                        id_choice = input(f"Select from the following product IDs: {id_options}\n"
+                                          f"Enter your selection:   ").lower()
+                        id_choice = clean_id(id_choice, id_options)
+                        if type(id_choice) == int:  # If choice is valid, gets product and prints it to console.
+                            id_error = False
+                            selected_product = session.query(Product).filter(Product.product_id == id_choice).first()
+                            print(selected_product)
+
+                elif choice == "x":
+                    choice_submenu = False
+
         elif choice == "a":  # Add product
             name = input("Enter product name:\n")
             price_error = True  # Creates loop to ensure user enters valid integer.
@@ -75,17 +112,28 @@ def app():
             quantity_error = True
             while quantity_error:
                 quantity = input("Enter product quantity:\n")
-                if type(quantity) is int:
-                    quantity_error = False
-                else:
-                    print("Please enter quantity as an integer.")
+                try:
+                    quantity = int(quantity)
+                    if type(quantity) is int:
+                        quantity_error = False
+                except ValueError:
+                    print("Invalid entry. Please enter an integer.")
+                    continue
+
             date = datetime.datetime.now()
+            new_product = Product(product_name=name, product_price=price, product_quantity=quantity, date_updated=date)
+            session.add(new_product)
+            session.commit
+            print("\nThis product has been added to the database!\n")
         elif choice == "b":  # Backup database
             pass
         else:
             print("Thank you for using the database app!")
+            break
 
 if __name__ == "__main__":
-    # Base.metadata.create_all(engine)
-    # add_csv()
+    Base.metadata.create_all(engine)
+    add_csv()
     app()
+
+
