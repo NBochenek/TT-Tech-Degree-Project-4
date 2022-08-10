@@ -70,6 +70,17 @@ def menu():
             input("Error! Please make a valid selection.")
 
 
+def create_backup():
+    with open("backup.csv", "w", newline="") as csv_file:
+        backup = csv.writer(csv_file, delimiter=',')
+        backup.writerow(["product_name","product_price","product_quantity","date_updated"])  # Writes column headers.
+        for products in session.query(Product).all():
+            backup.writerow([products.product_name, "$" + str(products.product_price / 100), products.product_quantity,
+                             products.date_updated.strftime("%m/%d/%y")])
+    print("\nBackup.csv has been created!\n")
+
+
+
 def app():
     app_running = True
     while app_running:
@@ -126,7 +137,7 @@ def app():
             session.commit
             print("\nThis product has been added to the database!\n")
         elif choice == "b":  # Backup database
-            pass
+            create_backup()
         else:
             print("Thank you for using the database app!")
             break
